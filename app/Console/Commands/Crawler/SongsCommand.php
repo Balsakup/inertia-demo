@@ -47,6 +47,9 @@ class SongsCommand extends Command
             $songCrawler = new Crawler(file_get_contents($songNode->filter('.bouton_play + a')->attr('href')));
             $name = (string) Str::of($songCrawler->filter('#titre_focus > h2 > a')->text())->before('|')->trim(' ');
             $description = $songCrawler->filter('#info_focus .product_info .acc p:nth-child(4)')->text();
+            $imageUrl = (string) Str::of($songCrawler
+                ->filter('#info_focus #img_focus > img')->attr('src'))
+                ->prepend('https://www.bensound.com/');
             $tags = $songCrawler
                 ->filter('#info_focus .taglist .tag')
                 ->each(static fn(Crawler $tagNode) => $tagNode->text());
@@ -54,6 +57,7 @@ class SongsCommand extends Command
             $audio = $song->addMediaFromUrl($songUrl)->toMediaCollection('audio');
             $song->duration = (new Mp3Info($audio->getPath()))->duration;
 
+            $song->addMediaFromUrl($imageUrl)->toMediaCollection('cover');
             $song->save();
             $progress->advance();
         });
